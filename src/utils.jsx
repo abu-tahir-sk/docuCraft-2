@@ -1,84 +1,140 @@
-// ==========================================
-// 1. থিম কালার সেটিংস
-// ==========================================
-export const themes = {
-  blue: { 
-    main: 'text-blue-600', 
-    bg: 'bg-blue-600', 
-    bgLight: 'bg-blue-50', 
-    border: 'border-blue-600', 
-    borderLight: 'border-blue-100', 
-    fill: 'fill-blue-600', 
-    activeTab: 'border-blue-600 text-blue-600 bg-blue-50/50' 
-  },
-  emerald: { 
-    main: 'text-emerald-600', 
-    bg: 'bg-emerald-600', 
-    bgLight: 'bg-emerald-50', 
-    border: 'border-emerald-600', 
-    borderLight: 'border-emerald-100', 
-    fill: 'fill-emerald-600', 
-    activeTab: 'border-emerald-600 text-emerald-600 bg-emerald-50/50' 
-  },
-  slate: { 
-    main: 'text-slate-800', 
-    bg: 'bg-slate-800', 
-    bgLight: 'bg-slate-100', 
-    border: 'border-slate-800', 
-    borderLight: 'border-slate-200', 
-    fill: 'fill-slate-800', 
-    activeTab: 'border-slate-800 text-slate-800 bg-slate-100/50' 
-  },
-  rose: { 
-    main: 'text-rose-600', 
-    bg: 'bg-rose-600', 
-    bgLight: 'bg-rose-50', 
-    border: 'border-rose-600', 
-    borderLight: 'border-rose-100', 
-    fill: 'fill-rose-600', 
-    activeTab: 'border-rose-600 text-rose-600 bg-rose-50/50' 
-  }
-};
+/**
+ * ============================================================================
+ * DocuCraft Utility Functions
+ * ============================================================================
+ */
 
-// ==========================================
-// 2. তারিখ ফরম্যাট করার ফাংশন (যেমন: 24 Jun, 2026)
-// ==========================================
-export const formatDate = (dateString) => {
-  if(!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-GB', { 
-    day: '2-digit', 
-    month: 'short', 
-    year: 'numeric' 
-  });
-};
-
-// ==========================================
-// 3. পেমেন্ট স্ট্যাটাস অনুযায়ী ব্যাজের কালার দেওয়ার ফাংশন
-// ==========================================
-export const getStatusColor = (status) => {
-  if(status === 'Paid') return 'bg-green-100 text-green-700 border-green-200';
-  if(status === 'Partial') return 'bg-orange-100 text-orange-700 border-orange-200';
-  return 'bg-red-100 text-red-700 border-red-200';
-};
-
-// ==========================================
-// 4. নাম্বারকে কথায় (Amount in Words) কনভার্ট করার ফাংশন
-// ==========================================
+/**
+ * 1. Number to Words Converter (Indian Numbering System)
+ * Converts numbers into words (Lakh, Crore) for Invoice/Quotation Grand Totals.
+ * * @param {number} num - The number to convert
+ * @returns {string} - The amount in words
+ */
 export const numberToWords = (num) => {
-  if (num === 0) return 'Zero';
-  const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
-  const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
+  if (num === 0 || isNaN(num)) return 'Zero Only';
   
-  // ইন্ডিয়ান নাম্বারিং সিস্টেম অনুযায়ী (লাখ, কোটি) কনভার্ট করার লজিক
-  const n = ('000000000' + Math.floor(num)).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  const a = ['', 'One ', 'Two ', 'Three ', 'Four ', 'Five ', 'Six ', 'Seven ', 'Eight ', 'Nine ', 'Ten ', 'Eleven ', 'Twelve ', 'Thirteen ', 'Fourteen ', 'Fifteen ', 'Sixteen ', 'Seventeen ', 'Eighteen ', 'Nineteen '];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  
+  // Format number to 9 digits with leading zeros
+  const n = ('000000000' + Math.floor(num)).slice(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+  
   if (!n) return '';
   
   let str = '';
-  str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
-  str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
-  str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
-  str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
-  str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+  str += (Number(n[1]) !== 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+  str += (Number(n[2]) !== 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+  str += (Number(n[3]) !== 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+  str += (Number(n[4]) !== 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+  str += (Number(n[5]) !== 0) ? ((str !== '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
   
   return str.trim() + ' Only';
+};
+
+/**
+ * 2. Date Formatter
+ * Formats a date string into various formats based on user preference.
+ * * @param {string} dateString - Valid date string or Date object
+ * @param {string} formatType - "DD/MM/YYYY", "MM/DD/YYYY", or "YYYY-MM-DD"
+ * @returns {string} - Formatted date string
+ */
+export const formatDate = (dateString, formatType = 'DD/MM/YYYY') => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  switch (formatType) {
+    case 'MM/DD/YYYY':
+      return `${month}/${day}/${year}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${month}-${day}`;
+    case 'DD/MM/YYYY':
+    default:
+      return `${day}/${month}/${year}`;
+  }
+};
+
+/**
+ * 3. Currency Formatter
+ * Adds commas to numbers based on the Indian numbering system or standard format.
+ * * @param {number} amount - The amount to format
+ * @param {string} currencyCode - e.g., 'INR', 'USD'
+ * @returns {string} - Formatted string (e.g., 1,00,000.00)
+ */
+export const formatCurrency = (amount, currencyCode = 'INR') => {
+  if (isNaN(amount)) return '0.00';
+  
+  if (currencyCode === 'INR') {
+    return Number(amount).toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  } else {
+    return Number(amount).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+};
+
+/**
+ * 4. Document Status Color Mapper
+ * Returns Tailwind CSS color classes for styling status badges.
+ * * @param {string} status - Document status (Draft, Paid, Overdue, etc.)
+ * @returns {string} - Tailwind CSS class names
+ */
+export const getStatusBadgeColor = (status) => {
+  const normalizedStatus = status?.toLowerCase();
+  
+  switch (normalizedStatus) {
+    case 'paid':
+    case 'accepted':
+    case 'approved':
+      return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
+      
+    case 'unpaid':
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800';
+      
+    case 'overdue':
+    case 'rejected':
+    case 'cancelled':
+    case 'expired':
+      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+      
+    case 'signed':
+      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800';
+      
+    case 'draft':
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
+  }
+};
+
+/**
+ * 5. Calculate Taxes & Totals (Helper for Dashboard/Listings)
+ * Computes subtotal and total taxes for a given array of items.
+ * * @param {Array} items - Array of item objects { qty, price, taxRate }
+ * @returns {Object} - { subtotal, totalTax, grossTotal }
+ */
+export const calculateTotals = (items = []) => {
+  let subtotal = 0;
+  let totalTax = 0;
+
+  items.forEach(item => {
+    const itemTotal = (Number(item.qty) || 0) * (Number(item.price) || 0);
+    const itemTax = itemTotal * ((Number(item.taxRate) || 0) / 100);
+    
+    subtotal += itemTotal;
+    totalTax += itemTax;
+  });
+
+  return {
+    subtotal,
+    totalTax,
+    grossTotal: subtotal + totalTax
+  };
 };

@@ -1,239 +1,274 @@
 import React from 'react';
+import { numberToWords, formatDate } from '../utils';
+
 
 const DocumentLayout = ({ 
-  docType, company = {}, client = {}, docMeta = {}, items = [], clauses = [], terms = {}, financials = {},
-  wmMode = 'disabled', wmText = '', wmLogo = null, wmIntensity = 9, wmSpacing = 810, wmSpread = 20, themeColor = '#10B981' 
+  docType, company, client, docMeta, items, 
+  clauses, terms, financials, settings, currency 
 }) => {
-  
-  const currency = docMeta.currency || '₹';
+  const themeColor = docMeta.themeColor || '#2563EB';
 
-  // ================= SMART CALCULATIONS =================
-  const subTotal = (items || []).reduce((acc, item) => {
-    const qty = Number(item.qty || 1);
-    const price = Number(item.price || item.rate || item.amount || 0);
-    return acc + (qty * price);
-  }, 0);
-
-  const itemTax = (items || []).reduce((acc, item) => {
-    const qty = Number(item.qty || 1);
-    const price = Number(item.price || item.rate || item.amount || 0);
-    const taxRate = Number(item.taxRate || item.taxPercent || item.tax || 0);
-    return acc + ((qty * price) * (taxRate / 100));
-  }, 0);
-
-  const discount = Number(financials.discount || 0);
-  const shipping = Number(financials.shipping || 0);
-  const globalTaxRate = Number(financials.taxRate || 0);
-  
-  const subTotalAfterDiscount = subTotal - discount;
-  const globalTaxAmount = subTotalAfterDiscount * (globalTaxRate / 100);
-  const totalTax = itemTax + globalTaxAmount;
-
-  const grandTotal = subTotalAfterDiscount + totalTax + shipping;
-
-  // ================= NUMBER TO WORDS CONVERTER =================
-  const numberToWords = (num) => {
-    if (num === 0) return 'Zero';
-    const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
-    const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
-    const n = ('000000000' + Math.floor(num)).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-    if (!n) return '';
-    let str = '';
-    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
-    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
-    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
-    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
-    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
-    return str.trim() + ' Only';
+  // Calculations
+  const calculateSubtotal = () => {
+    return items.reduce((sum, item) => sum + (item.qty * item.price), 0);
   };
 
-  // Watermark Style Logic
-  const getWatermarkStyle = () => ({
-    opacity: wmIntensity / 100, 
-    rotation: `rotate(-${wmSpread}deg)`, 
-    gap: `${Math.max(20, wmSpacing / 10)}px`
-  });
-  const wmStyles = getWatermarkStyle();
+  const calculateTotalTax = () => {
+    return items.reduce((sum, item) => {
+      const itemTotal = item.qty * item.price;
+      return sum + (itemTotal * (item.taxRate / 100));
+    }, 0);
+  };
+
+  const subtotal = calculateSubtotal();
+  const taxAmount = calculateTotalTax();
+  const discount = Number(financials?.discount) || 0;
+  const shipping = Number(financials?.shipping) || 0;
+  const grandTotal = subtotal - discount + taxAmount + shipping;
+
+  // Number to Words Converter (Basic Indian format for ₹)
+  
 
   return (
-    <div className="p-12 text-gray-800 h-full flex flex-col justify-between font-sans relative">
+    <div className="w-full h-full bg-white text-gray-900 flex flex-col relative z-10" style={{ fontFamily: settings?.fontFamily }}>
       
-      {/* ================= WATERMARK ================= */}
-      {wmMode !== 'disabled' && (
-        <div 
-          className="absolute inset-0 flex overflow-hidden z-0 pointer-events-none"
-          style={{ opacity: wmStyles.opacity }}
-        >
-          {wmMode.includes('tiling') ? (
-            <div className="w-full h-full flex flex-wrap justify-center items-center" style={{ gap: wmStyles.gap, padding: '2rem' }}>
-               {Array(40).fill(0).map((_, i) => (
-                  <div key={i} style={{ transform: wmStyles.rotation }} className="flex justify-center items-center">
-                      {wmMode === 'logo_tiling' && wmLogo && <img src={wmLogo} alt="WM" className="w-24 object-contain grayscale" />}
-                      {wmMode === 'text_tiling' && <span className="text-4xl font-black uppercase whitespace-nowrap text-gray-400">{wmText}</span>}
-                  </div>
-               ))}
-            </div>
-          ) : (
-            <div className="w-full h-full flex justify-center items-center">
-               <div style={{ transform: wmStyles.rotation }} className="flex justify-center items-center">
-                   {wmMode === 'single_logo' && wmLogo && <img src={wmLogo} alt="WM" className="w-96 object-contain grayscale opacity-20" />}
-                   {wmMode === 'single_text' && <span className="text-8xl font-black uppercase whitespace-nowrap text-gray-200">{wmText}</span>}
-               </div>
-            </div>
-          )}
+      {/* --- STATUS STAMP --- */}
+      {settings?.status && settings.status !== 'Draft' && (
+        <div className="absolute top-40 right-10 opacity-20 pointer-events-none transform rotate-12 z-0">
+          <span className={`text-6xl font-black uppercase border-8 p-4 rounded-xl ${
+            settings.status === 'Paid' || settings.status === 'Accepted' ? 'text-green-600 border-green-600' :
+            settings.status === 'Overdue' || settings.status === 'Rejected' ? 'text-red-600 border-red-600' :
+            'text-gray-600 border-gray-600'
+          }`}>
+            {settings.status}
+          </span>
         </div>
       )}
 
-      {/* ================= HEADER ================= */}
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-8">
+      {/* ================= 1. HEADER ================= */}
+      <div className="flex justify-between items-start border-b-2 pb-6 mb-6" style={{ borderColor: themeColor }}>
+        {/* Company Info */}
+        <div className="flex-1">
+          {company?.logo ? (
+            <img src={company.logo} alt="Company Logo" className="h-16 object-contain mb-3" />
+          ) : (
+            <h1 className="text-2xl font-black mb-1" style={{ color: themeColor }}>{company?.name || 'Company Name'}</h1>
+          )}
+          {company?.tagline && <p className="text-xs text-gray-500 italic mb-2">{company.tagline}</p>}
           
-          <div className="flex items-center gap-4">
-            {/* Company Logo in PDF */}
-            {company.logo && (
-              <img src={company.logo} alt="Logo" className="w-20 h-20 object-contain rounded-md border border-gray-100 p-1" />
-            )}
-            <div>
-              <h1 style={{ color: docMeta.themeColor || themeColor }} className="text-4xl font-black uppercase tracking-widest">{docMeta.title}</h1>
-              <p className="text-gray-600 font-semibold mt-1"># {docMeta.number}</p>
+          <div className="text-[11px] leading-tight text-gray-600 space-y-0.5">
+            {company?.address && <p className="whitespace-pre-wrap w-2/3">{company.address}</p>}
+            {company?.phone && <p><strong>Phone:</strong> {company.phone}</p>}
+            {company?.email && <p><strong>Email:</strong> {company.email}</p>}
+            {company?.website && <p><strong>Web:</strong> {company.website}</p>}
+            <div className="flex gap-4 mt-2">
+              {company?.gst && <p><strong>GSTIN:</strong> {company.gst}</p>}
+              {company?.pan && <p><strong>PAN:</strong> {company.pan}</p>}
+              {company?.cin && <p><strong>CIN:</strong> {company.cin}</p>}
             </div>
           </div>
-
-          <div className="text-right text-sm">
-            <h2 className="text-xl font-bold mb-1 text-gray-800">{company.name}</h2>
-            <p className="text-gray-600 font-medium">GSTIN: {company.gst}</p>
-            <p className="text-gray-500 whitespace-pre-wrap">{company.address}</p>
-          </div>
-        </div>
-        <div className="border-t-2 border-gray-100 mb-8"></div>
-
-        {/* ================= CLIENT INFO ================= */}
-        <div className="flex justify-between mb-8 text-sm">
-          <div>
-            <span style={{ backgroundColor: `${docMeta.themeColor || themeColor}20`, color: docMeta.themeColor || themeColor }} className="font-bold px-3 py-1 rounded text-xs uppercase mb-3 inline-block">Billed To</span>
-            <h3 className="text-lg font-bold text-gray-800 mb-1">{client.name}</h3>
-            <p className="text-gray-500 whitespace-pre-wrap">{client.billingAddress}</p>
-          </div>
-          <div className="w-64 space-y-2 text-gray-600">
-             <div className="flex justify-between"><span className="font-medium">Date:</span> <span>{docMeta.date}</span></div>
-             {docType !== 'agreement' && <div className="flex justify-between"><span className="font-medium">Due Date:</span> <span>{docMeta.dueDate}</span></div>}
-          </div>
         </div>
 
-        {/* ================= DYNAMIC CONTENT ================= */}
-        {docType === 'agreement' ? (
-          <div className="mt-8 text-gray-700 text-sm leading-relaxed min-h-[300px]">
-            {clauses.map((clause, idx) => (
-              <p key={idx} className="mb-4 text-justify">
-                <span className="font-bold text-gray-900 uppercase">{idx + 1}. {clause.title}: </span> 
-                {clause.text}
-              </p>
-            ))}
+        {/* Document Meta */}
+        <div className="text-right">
+          <h2 className="text-3xl font-black uppercase tracking-widest" style={{ color: themeColor }}>
+            {docMeta?.title}
+          </h2>
+          <div className="mt-4 text-[11px] space-y-1">
+            <p><span className="font-bold text-gray-500 uppercase mr-2">{docType === 'quotation' ? 'Quote #' : docType === 'agreement' ? 'Agr #' : 'Inv #'}</span> <span className="font-bold">{docMeta?.number}</span></p>
+            <p><span className="font-bold text-gray-500 uppercase mr-2">Issue Date:</span> {new Date(docMeta?.date).toLocaleDateString()}</p>
+            {docType !== 'agreement' && (
+              <p><span className="font-bold text-gray-500 uppercase mr-2">Valid Till:</span> {new Date(docMeta?.dueDate).toLocaleDateString()}</p>
+            )}
           </div>
-        ) : (
-          <div className="min-h-[300px]">
-            <table className="w-full text-left border-collapse mb-8">
-              <thead style={{ backgroundColor: docMeta.themeColor || themeColor }} className="text-white">
-                <tr>
-                  <th className="py-3 px-4 font-bold text-xs uppercase rounded-tl-lg">Description</th>
-                  <th className="py-3 px-4 font-bold text-xs uppercase text-center w-20">Qty</th>
-                  <th className="py-3 px-4 font-bold text-xs uppercase text-right w-28">Price</th>
-                  <th className="py-3 px-4 font-bold text-xs uppercase text-right rounded-tr-lg">Total</th>
+        </div>
+      </div>
+
+      {/* ================= 2. CLIENT INFO (BILL TO) ================= */}
+      {docType !== 'agreement' && (
+        <div className="mb-6 flex justify-between">
+          <div className="w-1/2">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2 border-b pb-1">Bill To</h3>
+            <h4 className="text-sm font-bold text-gray-800">{client?.name || 'Client Name'}</h4>
+            {client?.contactPerson && <p className="text-[11px] text-gray-600 mt-1"><strong>Attn:</strong> {client.contactPerson}</p>}
+            <p className="text-[11px] text-gray-600 mt-1 whitespace-pre-wrap">{client?.billingAddress}</p>
+            {client?.phone && <p className="text-[11px] text-gray-600 mt-1"><strong>Phone:</strong> {client.phone}</p>}
+            {client?.email && <p className="text-[11px] text-gray-600 mt-1"><strong>Email:</strong> {client.email}</p>}
+            {client?.gst && <p className="text-[11px] text-gray-600 mt-1"><strong>GSTIN:</strong> {client.gst}</p>}
+          </div>
+        </div>
+      )}
+
+      {/* ================= 3. DOCUMENT BODY (ITEMS OR CLAUSES) ================= */}
+      <div className="flex-1">
+        
+        {/* --- INVOICE & QUOTATION ITEMS TABLE --- */}
+        {docType !== 'agreement' && (
+          <div className="mb-6">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[10px] uppercase text-white" style={{ backgroundColor: themeColor }}>
+                  <th className="py-2 px-3 font-bold w-8 text-center rounded-tl-lg">#</th>
+                  <th className="py-2 px-3 font-bold">Item Description</th>
+                  <th className="py-2 px-2 font-bold w-16 text-center">HSN</th>
+                  <th className="py-2 px-2 font-bold w-16 text-center">Qty</th>
+                  <th className="py-2 px-2 font-bold w-16 text-center">Unit</th>
+                  <th className="py-2 px-3 font-bold w-24 text-right">Price</th>
+                  <th className="py-2 px-2 font-bold w-16 text-center">Tax%</th>
+                  <th className="py-2 px-3 font-bold w-28 text-right rounded-tr-lg">Total</th>
                 </tr>
               </thead>
-              <tbody className="text-sm">
-                {items.map((item, idx) => {
-                  const qty = Number(item.qty || 1);
-                  const price = Number(item.price || item.rate || item.amount || 0);
-                  const taxRate = Number(item.taxRate || item.taxPercent || item.tax || 0);
-                  const itemName = item.name || item.desc || item.description || "Item Description";
-                  const itemTotal = (qty * price) + ((qty * price) * (taxRate / 100));
-                  
-                  return (
-                    <tr key={idx} className="border-b border-gray-100">
-                      <td className="py-4 px-4 font-medium text-gray-800">{itemName}</td>
-                      <td className="py-4 px-4 text-center">{qty}</td>
-                      <td className="py-4 px-4 text-right">{currency}{price.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                      <td className="py-4 px-4 text-right font-bold">{currency}{itemTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    </tr>
-                  );
-                })}
+              <tbody>
+                {items?.map((item, idx) => (
+                  <tr key={idx} className="border-b border-gray-200 text-[11px] align-top">
+                    <td className="py-3 px-3 text-center text-gray-500">{idx + 1}</td>
+                    <td className="py-3 px-3">
+                      <p className="font-bold text-gray-800">{item.name}</p>
+                      {item.description && <p className="text-gray-500 mt-0.5 text-[10px]">{item.description}</p>}
+                    </td>
+                    <td className="py-3 px-2 text-center text-gray-600">{item.hsn || '-'}</td>
+                    <td className="py-3 px-2 text-center">{item.qty}</td>
+                    <td className="py-3 px-2 text-center text-gray-500">{item.unit}</td>
+                    <td className="py-3 px-3 text-right">{currency} {item.price.toFixed(2)}</td>
+                    <td className="py-3 px-2 text-center text-gray-500">{item.taxRate}%</td>
+                    <td className="py-3 px-3 text-right font-bold">
+                      {currency} {((item.qty * item.price) + ((item.qty * item.price) * (item.taxRate / 100))).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          </div>
+        )}
 
-            {/* ================= SUMMARY SECTION WITH AMOUNT IN WORDS ================= */}
-            <div className="flex justify-between items-start mt-6 border-t border-gray-200 pt-6">
-              
-              <div className="w-[50%] pr-4">
-                <h4 className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: docMeta.themeColor || themeColor }}>
-                  Amount in Words
+        {/* --- AGREEMENT CLAUSES --- */}
+        {docType === 'agreement' && (
+          <div className="mb-6 space-y-4">
+            <div className="text-center mb-8">
+              <h3 className="text-lg font-bold">THIS AGREEMENT is made on {new Date(docMeta?.date).toLocaleDateString()}</h3>
+              <p className="text-sm mt-2">BETWEEN <strong>{company?.name}</strong> AND <strong>{client?.name}</strong></p>
+            </div>
+            {clauses?.map((clause, idx) => (
+              <div key={idx} className="text-sm text-justify">
+                <h4 className="font-bold mb-1" style={{ color: themeColor }}>
+                  {idx + 1}. {clause.title}
                 </h4>
-                <div className="text-gray-700 bg-transparent px-4 py-3 rounded-lg text-[13px] font-medium leading-relaxed mb-5 border border-blue-50 break-words">
-                  {currency} {numberToWords(grandTotal)}
-                </div>
+                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap ml-4">
+                  {clause.text}
+                </p>
               </div>
+            ))}
+          </div>
+        )}
 
-              <div className="w-[45%] bg-transparent  rounded-xl border border-gray-200 overflow-hidden text-sm">
-                <div className="flex justify-between p-4 border-b border-gray-200">
-                  <span>Subtotal</span> <span>{currency}{Number(subTotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-                
-                {discount > 0 && (
-                  <div className="flex justify-between p-4 border-b border-gray-200 text-red-500">
-                    <span>Discount</span> <span>-{currency}{Number(discount).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                  </div>
-                )}
-
-                {totalTax > 0 && (
-                  <div className="flex justify-between p-4 border-b border-gray-200">
-                    <span>Tax {globalTaxRate > 0 ? `(${globalTaxRate}%)` : ''}</span> <span>{currency}{Number(totalTax).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                  </div>
-                )}
-
-                {shipping > 0 && (
-                  <div className="flex justify-between p-4 border-b border-gray-200">
-                    <span>Shipping</span> <span>{currency}{Number(shipping).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                  </div>
-                )}
-
-                <div style={{ backgroundColor: `${docMeta.themeColor || themeColor}15`, color: docMeta.themeColor || themeColor }} className="flex justify-between p-4 font-black text-lg">
-                  <span>Grand Total</span> <span>{currency}{Number(grandTotal || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                </div>
-              </div>
-
+        {/* ================= 4. SUMMARY (FINANCIALS) ================= */}
+        {docType !== 'agreement' && (
+          <div className="flex justify-between items-start mb-8">
+            <div className="w-1/2 pt-4">
+              <p className="text-[10px] font-bold text-gray-400 uppercase">Amount in Words:</p>
+              <p className="text-xs font-bold text-gray-800 mt-1 italic">
+                {currency} {numberToWords(grandTotal)}
+              </p>
+            </div>
+            <div className="w-72">
+              <table className="w-full text-[11px]">
+                <tbody>
+                  <tr>
+                    <td className="py-1 text-gray-600 font-bold">Subtotal:</td>
+                    <td className="py-1 text-right">{currency} {subtotal.toFixed(2)}</td>
+                  </tr>
+                  {discount > 0 && (
+                    <tr>
+                      <td className="py-1 text-red-500 font-bold">Discount:</td>
+                      <td className="py-1 text-right text-red-500">- {currency} {discount.toFixed(2)}</td>
+                    </tr>
+                  )}
+                  {taxAmount > 0 && (
+                    <tr>
+                      <td className="py-1 text-gray-600 font-bold">Tax Amount:</td>
+                      <td className="py-1 text-right">{currency} {taxAmount.toFixed(2)}</td>
+                    </tr>
+                  )}
+                  {shipping > 0 && (
+                    <tr>
+                      <td className="py-1 text-gray-600 font-bold">Shipping/Freight:</td>
+                      <td className="py-1 text-right">{currency} {shipping.toFixed(2)}</td>
+                    </tr>
+                  )}
+                  <tr className="border-t-2 border-gray-800">
+                    <td className="py-2 text-sm font-black" style={{ color: themeColor }}>Grand Total:</td>
+                    <td className="py-2 text-sm font-black text-right" style={{ color: themeColor }}>
+                      {currency} {grandTotal.toFixed(2)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         )}
       </div>
 
-      {/* ================= FOOTER ================= */}
-      <div className="relative z-20 mt-12 pt-6 border-t border-gray-200">
+      {/* ================= 5. FOOTER DETAILS & SIGNATURE ================= */}
+      <div className="mt-auto pt-6">
         <div className="flex justify-between items-end">
-          <div className="text-xs text-gray-600 w-1/2 space-y-4">
-             {terms.notes && <p className="italic text-gray-500">{terms.notes}</p>}
-             <div>
-               <h4 className="font-bold text-gray-800 uppercase mb-1">Terms & Conditions</h4>
-               <p className="whitespace-pre-wrap">{terms.conditions}</p>
-             </div>
-             {docType !== 'agreement' && terms.bankDetails && (
-               <div>
-                 <h4 className="font-bold text-gray-800 uppercase mb-1">Payment Details</h4>
-                 <p className="whitespace-pre-wrap">{terms.bankDetails}</p>
-               </div>
-             )}
-          </div>
-          <div className="relative text-center w-64 pt-6">
-            {company.seal && <img src={company.seal} alt="Seal" className="absolute -left-6 -top-4 w-24 h-24 object-contain opacity-70 mix-blend-multiply" />}
-            <div className="relative z-10 h-16 flex items-end justify-center mb-2">
-              {company.signature ? (
-                <img src={company.signature} alt="Signature" className="h-full object-contain mix-blend-multiply" />
-              ) : (
-                <div className="w-48 border-b border-dashed border-gray-400"></div>
+          
+          {/* Terms & Notes */}
+          <div className="w-3/5 space-y-4">
+            {terms?.notes && (
+              <div>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase">Notes</h4>
+                <p className="text-[11px] text-gray-700 whitespace-pre-wrap">{terms.notes}</p>
+              </div>
+            )}
+            
+            <div className="flex gap-4">
+              {terms?.conditions && (
+                <div className="flex-1">
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase">Terms & Conditions</h4>
+                  <p className="text-[10px] text-gray-600 whitespace-pre-wrap">{terms.conditions}</p>
+                </div>
+              )}
+              
+              {docType !== 'agreement' && terms?.bankDetails && (
+                <div className="flex-1 bg-gray-50 p-3 rounded-lg border">
+                  <h4 className="text-[10px] font-black text-gray-400 uppercase mb-1">Payment Details</h4>
+                  <p className="text-[10px] text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">{terms.bankDetails}</p>
+                </div>
               )}
             </div>
-            <p className="text-gray-800 font-bold border-t border-gray-400 pt-2 mx-auto w-48 text-sm">Authorized Signatory</p>
           </div>
+
+          {/* Signatures */}
+          <div className="w-2/5 flex flex-col items-end text-center">
+            {docType === 'agreement' && (
+               <div className="mb-10 w-full flex justify-between items-end border-b pb-2">
+                 <div className="w-32 border-t border-gray-400 pt-1 mt-16 text-[10px] font-bold">Client Signature</div>
+                 <div className="w-32 border-t border-gray-400 pt-1 mt-16 text-[10px] font-bold">Company Signature</div>
+               </div>
+            )}
+            
+            {docType !== 'agreement' && (
+              <div className="relative w-48 flex flex-col items-center">
+                <div className="h-20 w-full flex justify-center items-center relative">
+                   {company?.seal && (
+                     <img src={company.seal} alt="Seal" className="absolute h-24 opacity-30 right-0 top-0 -z-10 mix-blend-multiply" />
+                   )}
+                   {company?.signature && (
+                     <img src={company.signature} alt="Signature" className="h-16 object-contain z-10" />
+                   )}
+                </div>
+                <div className="border-t-2 w-full border-gray-800 pt-1 mt-2">
+                  <p className="text-[11px] font-bold">Authorized Signatory</p>
+                  <p className="text-[9px] text-gray-500">{company?.name}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
         </div>
+
+        {/* Footer Ribbon (Optional Base Decoration) */}
+        <div className="h-2 w-full mt-6 rounded-b-xl" style={{ backgroundColor: themeColor }}></div>
       </div>
 
     </div>

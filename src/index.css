@@ -7,3 +7,49 @@
     @apply transition-colors duration-300;
   }
 }
+
+
+
+@layer utilities {
+  /* Custom Scrollbar Hiding for the Tabs */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* =======================================
+   PRINT SPECIFIC CSS
+======================================= */
+@media print {
+  body {
+    background-color: white !important;
+  }
+  
+  /* Hide the sidebar and top navigation when printing */
+  .no-print, aside, header {
+    display: none !important;
+  }
+  
+  /* Ensure the A4 page fits the print paper exactly */
+  .print\:w-full {
+    width: 100% !important;
+  }
+  
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+  
+  .print\:m-0 {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  @page {
+    margin: 0;
+    size: auto;
+  }
+}
