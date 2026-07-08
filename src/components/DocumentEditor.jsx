@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2pdf from 'html2pdf.js';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useParams, useNavigate } from "react-router-dom";
+
+// Custom API (jokhon theke 401 error asbe na)
+import api from '../api/axios';
 
 // Layout & Modular Components
 import DocumentLayout from '../preview/DocumentLayout';
@@ -42,7 +44,6 @@ const DocumentEditor = ({ docType: propDocType }) => {
   const [terms, setTerms] = useState(() => loadSavedData('doc_v3_terms', { notes: 'Thank you for your business.', conditions: '1. Quotation valid for 30 days.\n2. Payment before delivery.\n3. Goods once sold cannot be returned.', bankDetails: 'Bank: State Bank of India\nA/C Name: TechFlow Solutions\nA/C No: 12345678901234\nIFSC: SBIN0001234\nUPI: techflow@sbi' }));
   const [financials, setFinancials] = useState(() => loadSavedData('doc_v3_financials', { taxRate: 0, discount: 0, shipping: 0 }));
 
-  // Watermark Default Fix: Set to 'disabled' by default
   const [wmMode, setWmMode] = useState(() => loadSavedData('doc_v3_wmMode', 'disabled'));
   const [wmText, setWmText] = useState(() => loadSavedData('doc_v3_wmText', ''));
   const [wmLogo, setWmLogo] = useState(() => loadSavedData('doc_v3_wmLogo', null));
@@ -59,17 +60,30 @@ const DocumentEditor = ({ docType: propDocType }) => {
 
   const loadDocument = async () => {
     try {
-      const res = await axios.get(`https://docu-craft-server.vercel.app/api/documents/${id}`, { withCredentials: true });
+      // ekhane amra custom 'api' use korchi jate cookies thik thake
+      const res = await api.get(`/documents/${id}`);
       const doc = res.data;
-      setDocType(doc.docType); setCompany(doc.data.company); setClient(doc.data.client); setDocMeta(doc.data.docMeta);
-      setItems(doc.data.items || []); setClauses(doc.data.clauses || []); setTerms(doc.data.terms); setFinancials(doc.data.financials);
+      
+      setDocType(doc.docType); 
+      setCompany(doc.data.company); 
+      setClient(doc.data.client); 
+      setDocMeta(doc.data.docMeta);
+      setItems(doc.data.items || []); 
+      setClauses(doc.data.clauses || []); 
+      setTerms(doc.data.terms); 
+      setFinancials(doc.data.financials);
 
-      // Load settings & watermark properly from DB
       if (doc.data.docSettings) setDocSettings(doc.data.docSettings);
-      setWmMode(doc.data.wmMode || 'disabled'); setWmText(doc.data.wmText || ''); setWmLogo(doc.data.wmLogo || null);
-      setWmIntensity(doc.data.wmIntensity || 12); setWmSpacing(doc.data.wmSpacing || 250); setWmSpread(doc.data.wmSpread || 16);
+      setWmMode(doc.data.wmMode || 'disabled'); 
+      setWmText(doc.data.wmText || ''); 
+      setWmLogo(doc.data.wmLogo || null);
+      setWmIntensity(doc.data.wmIntensity || 12); 
+      setWmSpacing(doc.data.wmSpacing || 250); 
+      setWmSpread(doc.data.wmSpread || 16);
       setCenterLogo(doc.data.centerLogo || false);
-    } catch (err) { toast.error("Failed to load document"); }
+    } catch (err) { 
+      toast.error("Failed to load document"); 
+    }
   };
 
   // ================= SAVE TO LOCAL STORAGE =================
@@ -108,7 +122,7 @@ const DocumentEditor = ({ docType: propDocType }) => {
     const formData = new FormData();
     formData.append("image", file);
     try {
-      const res = await axios.post("https://docu-craft-server.vercel.app/api/upload/image", formData, { headers: { "Content-Type": "multipart/form-data" }, withCredentials: true });
+      const res = await api.post("/upload/image", formData, { headers: { "Content-Type": "multipart/form-data" } });
       const imageUrl = res.data.url;
       if (fieldName === "companyLogo") setCompany(prev => ({ ...prev, logo: imageUrl }));
       else if (fieldName === "companySignature") setCompany(prev => ({ ...prev, signature: imageUrl }));
@@ -123,36 +137,35 @@ const DocumentEditor = ({ docType: propDocType }) => {
     html2pdf().set(opt).from(element).save();
   };
 
-  // ================= SAVE TO DATABASE LOGIC (RESTORED) =================
+  // ================= SAVE TO DATABASE LOGIC =================
   const handleSave = async () => {
     setIsSaving(true);
     const toastId = toast.loading("Saving document to database...");
-
+    
     try {
-      // Packaging all data for the backend
       const docData = {
         docType,
         docNumber: docMeta.number,
         clientName: client.name,
         data: {
           company, client, docMeta, items, clauses, terms, financials,
-          docSettings, // Added docSettings so status & font are saved
+          docSettings, 
           wmMode, wmText, wmLogo, wmIntensity, wmSpacing, wmSpread, centerLogo
         },
       };
 
       if (isEditMode) {
-        await axios.put(`https://docu-craft-server.vercel.app/api/documents/update/${id}`, docData, { withCredentials: true });
+        // ekhane custom api instance use kora hoyeche (401 error thekanor jonno)
+        await api.put(`/documents/update/${id}`, docData);
         toast.success("Document Updated Successfully!", { id: toastId });
       } else {
-        await axios.post("https://docu-craft-server.vercel.app/api/documents/save", docData, { withCredentials: true });
+        await api.post("/documents/save", docData);
         toast.success("Document Saved Successfully!", { id: toastId });
-        // Optional: Redirect to saved documents after save
-        // navigate('/dashboard/saved-documents');
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save document to database", { id: toastId });
+      const errorMsg = err.response?.data?.message || "Failed to save document to database";
+      toast.error(errorMsg, { id: toastId });
     } finally {
       setIsSaving(false);
     }
@@ -210,10 +223,10 @@ const DocumentEditor = ({ docType: propDocType }) => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-64px)] bg-gray-100 dark:bg-gray-950 p-4 font-sans transition-colors duration-300 overflow-hidden">
+    <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] bg-gray-100 dark:bg-gray-950 p-4 font-sans transition-colors duration-300 lg:overflow-hidden overflow-y-auto">
 
       {/* ================= LEFT: CONTROL PANEL ================= */}
-      <div className="w-full lg:w-[450px] bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-lg flex flex-col overflow-hidden transition-colors duration-300 flex-shrink-0 relative">
+      <div className="w-full lg:w-[450px] h-[550px] lg:h-full bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800 rounded-xl shadow-lg flex flex-col overflow-hidden transition-colors duration-300 shrink-0 relative">
         <div className="flex overflow-x-auto bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800 p-2 gap-2 hide-scrollbar shrink-0 z-10">
           {tabs.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab.toLowerCase())} className={`px-4 py-2 text-sm font-bold rounded-lg whitespace-nowrap transition-colors ${activeTab === tab.toLowerCase() ? 'bg-blue-600 text-white shadow' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800'}`}>
@@ -225,7 +238,6 @@ const DocumentEditor = ({ docType: propDocType }) => {
         <div className="flex-1 overflow-y-auto p-5 pb-24 bg-[#FCFAF8] dark:bg-gray-900 transition-colors duration-300">
 
           {activeTab === 'settings' && (
-
             <DocumentSettings
               docSettings={docSettings} setDocSettings={setDocSettings}
               docMeta={docMeta} setDocMeta={setDocMeta}
@@ -235,7 +247,6 @@ const DocumentEditor = ({ docType: propDocType }) => {
               centerLogo={centerLogo} setCenterLogo={setCenterLogo}
               handleImageUpload={handleImageUpload} themeColors={themeColors}
             />
-
           )}
           {activeTab === 'company' && <CompanyForm company={company} setCompany={setCompany} handleImageUpload={handleImageUpload} />}
           {activeTab === 'client' && <ClientForm client={client} setClient={setClient} />}
@@ -275,7 +286,7 @@ const DocumentEditor = ({ docType: propDocType }) => {
       </div>
 
       {/* ================= RIGHT: LIVE PDF PREVIEW ================= */}
-      <div className="flex-1 bg-gray-300 dark:bg-gray-800 flex justify-center items-start overflow-y-auto p-2 sm:p-8 shadow-inner transition-colors duration-300 rounded-xl relative">
+      <div className="w-full lg:flex-1 h-[500px] lg:h-full bg-gray-300 dark:bg-gray-800 flex justify-center items-start overflow-y-auto p-2 sm:p-8 shadow-inner transition-colors duration-300 rounded-xl relative shrink-0">
         <div className="transform scale-[0.45] sm:scale-[0.6] md:scale-[0.7] xl:scale-100 origin-top transition-transform duration-300 pb-20">
           <div ref={pdfRef} className="bg-white w-[210mm] min-h-[297mm] text-black shadow-2xl relative overflow-hidden" style={{ backgroundColor: docMeta.paperColor || '#FFFFFF', fontFamily: docSettings.fontFamily }}>
             {renderWatermarkLayer()}
@@ -292,6 +303,7 @@ const DocumentEditor = ({ docType: propDocType }) => {
           </div>
         </div>
       </div>
+      
     </div>
   );
 };

@@ -1,3 +1,3 @@
 # Docu Craft
-*** live link https://docucraft-pro.netlify.app/
+*** live link https://docucruft2.netlify.app/
 

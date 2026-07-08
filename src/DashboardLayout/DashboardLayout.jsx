@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext'; // ThemeContext ইমপোর্ট করা হলো
-import { FiSun, FiMoon } from 'react-icons/fi'; // আইকন ইমপোর্ট করা হলো
+import { useTheme } from '../context/ThemeContext';
+import { FiSun, FiMoon } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 
 const DashboardLayout = () => {
@@ -12,7 +12,6 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // ThemeContext থেকে theme এবং toggleTheme নেওয়া হলো
   const { theme, toggleTheme } = useTheme(); 
 
   const menuItems = [
@@ -60,12 +59,20 @@ const DashboardLayout = () => {
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-950 overflow-hidden w-full relative transition-colors duration-300">
       
+      {/* Mobile er jonno Background Overlay */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity"
+          onClick={() => setIsExpanded(false)}
+        />
+      )}
+
       {/* ========================================== */}
-      {/* Sidebar (ডার্ক মোড ক্লাস যুক্ত করা হয়েছে) */}
+      {/* Sidebar - Ekhane responsive classes add kora hoyeche */}
       {/* ========================================== */}
       <aside
-        className={`bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-20 flex flex-col justify-between transition-all duration-300 ease-in-out
-        ${isExpanded ? 'w-64' : 'w-20'}`}
+        className={`bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 flex flex-col justify-between transition-all duration-300 ease-in-out absolute md:relative h-full
+        ${isExpanded ? 'w-64 translate-x-0' : 'w-64 md:w-20 -translate-x-full md:translate-x-0'}`}
       >
         <div className="flex flex-col mt-4">
           <nav className="flex flex-col gap-2 px-3">
@@ -76,8 +83,9 @@ const DashboardLayout = () => {
                   key={item.name}
                   to={item.path}
                   title={!isExpanded ? item.name : ""}
+                  onClick={() => window.innerWidth < 768 && setIsExpanded(false)} // Mobile e link a click korle menu bondho hobe
                   className={`flex items-center rounded-lg transition-colors overflow-hidden
-                    ${isExpanded ? 'px-4 py-3 justify-start' : 'p-3 justify-center'}
+                    ${isExpanded ? 'px-4 py-3 justify-start' : 'px-4 md:p-3 justify-start md:justify-center py-3'}
                     ${isActive
                       ? 'bg-[#E3EAF7] dark:bg-blue-900/30 text-[#0A2647] dark:text-blue-400 font-semibold' 
                       : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-white'
@@ -89,7 +97,7 @@ const DashboardLayout = () => {
                   </svg>
                   <span
                     className={`ml-4 whitespace-nowrap transition-opacity duration-300
-                      ${isExpanded ? 'opacity-100' : 'opacity-0 hidden'}
+                      ${isExpanded ? 'opacity-100' : 'opacity-100 md:opacity-0 md:hidden'}
                     `}
                   >
                     {item.name}
@@ -104,13 +112,13 @@ const DashboardLayout = () => {
           <button onClick={handleLogout}
             title={!isExpanded ? "Logout" : ""}
             className={`w-full flex items-center text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 transition-colors rounded-lg
-              ${isExpanded ? 'px-4 py-3 justify-start' : 'p-3 justify-center'}
+              ${isExpanded ? 'px-4 py-3 justify-start' : 'px-4 md:p-3 justify-start md:justify-center py-3'}
             `}
           >
             <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
-            <span className={`ml-4 font-semibold whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 hidden'}`}>
+            <span className={`ml-4 font-semibold whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-100 md:opacity-0 md:hidden'}`}>
               Logout
             </span>
           </button>
@@ -122,9 +130,8 @@ const DashboardLayout = () => {
       {/* ========================================== */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden w-full">
         
-        {/* Top Bar (ডার্ক মোড ক্লাস যুক্ত করা হয়েছে) */}
-        <header className="bg-white dark:bg-gray-900 shadow-sm h-16 flex items-center justify-between px-6 z-10 border-b border-gray-200 dark:border-gray-800 shrink-0 transition-colors duration-300">
-          <div className="flex items-center gap-4">
+        <header className="bg-white dark:bg-gray-900 shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 z-10 border-b border-gray-200 dark:border-gray-800 shrink-0 transition-colors duration-300">
+          <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2 text-gray-500 dark:text-gray-400 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
@@ -133,15 +140,14 @@ const DashboardLayout = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
             </button>
-            <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer ml-2">
+            <div onClick={() => navigate("/")} className="flex items-center gap-2 cursor-pointer ml-1 sm:ml-2">
               <div className="w-8 h-8 bg-[#0A2647] dark:bg-blue-600 text-white rounded flex items-center justify-center font-bold text-xl">D</div>
-              <h2 className="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">Docu<span className="text-blue-600 dark:text-blue-400">Craft</span></h2>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight hidden sm:block">Docu<span className="text-blue-600 dark:text-blue-400">Craft</span></h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-5">
             
-            {/* Theme Toggle Button (নতুন যুক্ত করা হয়েছে) */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-yellow-400 hover:scale-105 transition-all"
@@ -155,7 +161,7 @@ const DashboardLayout = () => {
               <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || ''}</p>
             </div>
             
-            <div className="h-10 w-10 bg-gray-200 dark:bg-gray-800 rounded-full border-2 border-[#0A2647] dark:border-blue-500 overflow-hidden cursor-pointer shadow-sm">
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-gray-200 dark:bg-gray-800 rounded-full border-2 border-[#0A2647] dark:border-blue-500 overflow-hidden cursor-pointer shadow-sm">
               <img
                 src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=0A2647&color=fff`}
                 alt="User"

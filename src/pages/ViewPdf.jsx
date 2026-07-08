@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Printer } from 'lucide-react'; // এই লাইনটি ইম্পোর্ট করা বাধ্যতামূলক
+import { ArrowLeft, Printer } from 'lucide-react';
 import DocumentLayout from '../preview/DocumentLayout'; 
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -40,8 +40,8 @@ const ViewPdf = () => {
     pdf.save(`${doc.docNumber || 'document'}.pdf`);
   };
 
-  if (loading) return <div className="text-center mt-10">Loading Document...</div>;
-  if (!doc || !doc.data) return <div className="text-center mt-10 text-red-500">Document not found or corrupt!</div>;
+  if (loading) return <div className="text-center mt-10 font-semibold text-gray-600">Loading Document...</div>;
+  if (!doc || !doc.data) return <div className="text-center mt-10 font-semibold text-red-500">Document not found or corrupt!</div>;
 
   const data = doc.data;
   const company = data.company || {};
@@ -76,40 +76,49 @@ const ViewPdf = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
-      <div className="no-print flex justify-between items-center mb-6 max-w-[210mm] mx-auto">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-black transition font-semibold">
+      
+      {/* Top er button gulo mobile e pashapashi na theke upore niche hobe */}
+      <div className="no-print flex flex-col sm:flex-row justify-between items-center mb-6 max-w-[210mm] mx-auto gap-4">
+        <button onClick={() => navigate(-1)} className="flex items-center justify-center w-full sm:w-auto gap-2 text-gray-600 hover:text-black transition font-semibold">
           <ArrowLeft size={20} /> Back
         </button>
-        <button onClick={handleDownload} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700 transition font-bold">
+        <button onClick={handleDownload} className="flex items-center justify-center w-full sm:w-auto gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg shadow hover:bg-blue-700 transition font-bold">
           <Printer size={20} /> Save as PDF
         </button>
       </div>
 
-      <div className="flex justify-center items-start overflow-x-auto pb-10">
-        <div
-          className="bg-white w-[210mm] min-h-[297mm] text-black shadow-2xl relative overflow-hidden mx-auto print:shadow-none print:w-full print:min-h-0 print:m-0"
-          style={{ 
-            backgroundColor: docMeta.paperColor || '#FFFFFF',
-            fontFamily: docSettings.fontFamily || 'Inter'
-          }}
-        >
-          {renderWatermarkLayer()}
-          <div id="pdf-content" className="relative z-10 h-full w-full">
-            <DocumentLayout
-              docType={doc.docType}
-              company={company}
-              client={client}
-              docMeta={{ ...docMeta, number: doc.docNumber }}
-              items={items}
-              clauses={clauses}
-              terms={terms}
-              financials={financials}
-              settings={docSettings}
-              currency={docSettings.currency || '₹'}
-              status={docSettings.status}
-              centerLogo={centerLogo}
-            />
+      {/* PDF Document Container - Ekhane Tailwind er responsive scaling add kora hoyeche */}
+      <div className="flex justify-center items-start overflow-hidden pb-20">
+        
+        {/* Scale wrapper: screen er size onujayi zoom-out hobe */}
+        <div className="transform scale-[0.45] sm:scale-[0.6] md:scale-[0.8] lg:scale-100 origin-top transition-transform duration-300 print:scale-100 print:transform-none">
+          
+          <div
+            className="bg-white w-[210mm] min-h-[297mm] text-black shadow-2xl relative overflow-hidden mx-auto print:shadow-none print:w-full print:min-h-0 print:m-0"
+            style={{ 
+              backgroundColor: docMeta.paperColor || '#FFFFFF',
+              fontFamily: docSettings.fontFamily || 'Inter'
+            }}
+          >
+            {renderWatermarkLayer()}
+            <div id="pdf-content" className="relative z-10 h-full w-full">
+              <DocumentLayout
+                docType={doc.docType}
+                company={company}
+                client={client}
+                docMeta={{ ...docMeta, number: doc.docNumber }}
+                items={items}
+                clauses={clauses}
+                terms={terms}
+                financials={financials}
+                settings={docSettings}
+                currency={docSettings.currency || '₹'}
+                status={docSettings.status}
+                centerLogo={centerLogo}
+              />
+            </div>
           </div>
+          
         </div>
       </div>
     </div>
