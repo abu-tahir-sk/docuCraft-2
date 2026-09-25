@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
@@ -43,7 +44,7 @@ const Login = () => {
     const toastId = toast.loading("Sending OTP to your email...");
 
     try {
-      const res = await axios.post("https://docu-craft-server.vercel.app/api/auth/login", { email });
+      const res = await api.post("/auth/login", { email });
 
       if (res.data.success) {
         toast.success(res.data.message, { id: toastId });
@@ -51,7 +52,6 @@ const Login = () => {
         setTimer(60); // 60 সেকেন্ডের টাইমার শুরু হবে
       }
     } catch (error) {
-      toast.error(error);
       const errorMsg = error.response?.data?.message || "Server connection failed. Is backend running?";
       toast.error(errorMsg, { id: toastId });
     } finally {
@@ -70,14 +70,16 @@ const Login = () => {
     const toastId = toast.loading("Verifying your identity...");
 
     try {
-      const res = await axios.post(
-        "https://docu-craft-server.vercel.app/api/auth/verify-login",
-        { email, otp, rememberMe },
-        { withCredentials: true }
+      const res = await api.post(
+        "/auth/verify-login",
+        { email, otp, rememberMe }
       );
 
       if (res.data.success) {
         toast.success("Welcome back! Login Successful ", { id: toastId });
+        if (res.data.accessToken) {
+          localStorage.setItem("accessToken", res.data.accessToken);
+        }
         setUser(res.data.user); // Context আপডেট 
 
         setTimeout(() => {
@@ -85,7 +87,6 @@ const Login = () => {
         }, 1000);
       }
     } catch (error) {
-      toast.error(error);
       const errorMsg = error.response?.data?.message || "Invalid OTP code. Please try again.";
       toast.error(errorMsg, { id: toastId });
       setLoading(false); // শুধুমাত্র এরর আসলেই লোডিং বন্ধ হবে
@@ -100,7 +101,7 @@ const Login = () => {
 
     const toastId = toast.loading("Resending OTP...");
     try {
-      const res = await axios.post("https://docu-craft-server.vercel.app/api/auth/resend-login-otp", { email });
+      const res = await api.post("/auth/resend-login-otp", { email });
 
       if (res.data.success) {
         toast.success("New OTP sent to your email!", { id: toastId });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Shield, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -13,9 +13,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get('https://docu-craft-server.vercel.app/api/auth/me', {
-          withCredentials: true,
-        });
+        const response = await api.get('/auth/me');
 
         if (response.data.success) {
           setUser(response.data.user);

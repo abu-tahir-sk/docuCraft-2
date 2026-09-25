@@ -18,7 +18,8 @@ const  { user } = useAuth();
   const handleLogout = async () => {
     try {
       await api.post("/auth/logout");
-
+      localStorage.removeItem("accessToken");
+      setUser(null);
       navigate("/login");
     } catch (error) {
        toast.error(error);

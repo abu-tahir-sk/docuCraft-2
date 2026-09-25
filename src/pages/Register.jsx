@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import toast from "react-hot-toast";
 import { User, Mail, Loader2, ArrowRight } from "lucide-react";
 
@@ -18,7 +18,7 @@ const Register = () => {
     setLoading(true);
     try {
 
-      await axios.post("https://docu-craft-server.vercel.app/api/auth/register", {
+      await api.post("/auth/register", {
         name: form.name,
         email: form.email,
       });

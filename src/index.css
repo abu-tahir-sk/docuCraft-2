@@ -21,9 +21,6 @@
   }
 }
 
-/* =======================================
-   PRINT SPECIFIC CSS
-======================================= */
 @media print {
   body {
     background-color: white !important;

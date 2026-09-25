@@ -13,6 +13,8 @@ const VerifyEmail = () => {
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [timer, setTimer] = useState(60);
 
   // যদি কেউ সরাসরি এই পেজে চলে আসে (ইমেইল ছাড়া), তাকে রেজিস্টার পেজে পাঠিয়ে দিবে
   useEffect(() => {
@@ -20,6 +22,17 @@ const VerifyEmail = () => {
       navigate("/register");
     }
   }, [email, navigate]);
+
+  // Resend OTP countdown timer
+  useEffect(() => {
+    let interval = null;
+    if (timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -44,6 +57,20 @@ const VerifyEmail = () => {
       toast.error(err.response?.data?.message || "Verification Failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (timer > 0 || resending) return;
+    setResending(true);
+    try {
+      const res = await api.post("/auth/resend-register-otp", { email });
+      toast.success(res.data.message || "New OTP sent to your email!");
+      setTimer(60);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -107,8 +134,26 @@ const VerifyEmail = () => {
             </button>
           </form>
 
+          {/* Resend OTP Option */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              Didn't receive code?{" "}
+              {timer > 0 ? (
+                <span className="font-bold text-gray-400">Resend in {timer}s</span>
+              ) : (
+                <button
+                  onClick={handleResend}
+                  disabled={resending}
+                  className="font-extrabold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1 disabled:opacity-50"
+                >
+                  {resending ? <Loader2 className="animate-spin" size={14} /> : "Resend OTP"}
+                </button>
+              )}
+            </p>
+          </div>
+
           {/* Go Back Option */}
-          <div className="mt-8 text-center pt-4 border-t border-gray-100">
+          <div className="mt-6 text-center pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-500">
               Wrong email address?{" "}
               <Link to="/register" className="font-extrabold text-blue-600 hover:text-blue-800 transition-colors">

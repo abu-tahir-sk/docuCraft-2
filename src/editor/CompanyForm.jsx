@@ -1,16 +1,34 @@
 import React from 'react';
 
-const CompanyForm = ({ company, setCompany, handleImageUpload }) => {
+const CompanyForm = ({ company, setCompany, handleImageUpload, docSettings, handleTypoChange }) => {
   // ছবি মুছে ফেলার ফাংশন
   const handleRemoveImage = (field) => {
     setCompany({ ...company, [field]: null });
   };
 
+  const currentCompSettings = docSettings?.typo?.compName || { size: 28, weight: '800' };
+
   return (
     <div className="space-y-4 animate-fadeIn">
       <div>
         <label className="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">Company Name</label>
-        <input type="text" value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} className="w-full p-2.5 mt-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. DocuCraft Ltd." />
+        <div className="flex gap-2 mt-1">
+          <input type="text" value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} className="flex-1 p-2.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. DocuCraft Ltd." />
+          <div className="flex gap-2 shrink-0">
+            <div className="flex items-center border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 overflow-hidden w-16">
+              <input type="number" value={currentCompSettings.size} onChange={(e) => handleTypoChange('compName', 'size', Number(e.target.value))} className="w-full p-2 text-sm font-bold text-center bg-transparent outline-none text-gray-900 dark:text-white" title="Font Size" />
+            </div>
+            <select value={currentCompSettings.weight} onChange={(e) => handleTypoChange('compName', 'weight', e.target.value)} className="w-24 p-2 text-sm font-semibold border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none cursor-pointer" title="Font Weight">
+              <option value="300">Light</option>
+              <option value="400">Normal</option>
+              <option value="500">Medium</option>
+              <option value="600">Semi Bold</option>
+              <option value="700">Bold</option>
+              <option value="800">Extra Bold</option>
+              <option value="900">Black</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

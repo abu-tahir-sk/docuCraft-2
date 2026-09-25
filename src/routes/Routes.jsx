@@ -11,6 +11,7 @@ import SavedDocuments from "../pages/SavedDocuments";
 import DocumentEditor from "../components/DocumentEditor";
 import ViewPdf from "../pages/ViewPdf";
 import Profile from "../pages/Profile";
+import Users from "../pages/Users";
 
 export const router = createBrowserRouter([
 
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardHome />,
+      },
+      {
+        path: "users",
+        element: <Users />,
       },
 
       {

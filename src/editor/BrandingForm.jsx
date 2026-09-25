@@ -93,6 +93,7 @@ const BrandingForm = ({
               <WatermarkOption id="single_text" label="SINGLE TEXT" icon={<Type size={15} />} />
               <WatermarkOption id="single_logo" label="SINGLE LOGO" icon={<ImageIcon size={15} />} />
               <WatermarkOption id="text_tiling" label="TEXT TILING" icon={<Copy size={15} />} />
+              <WatermarkOption id="light_text_tiling" label="LIGHT TEXT TILING" icon={<Type size={15} opacity={0.6} />} />
               <WatermarkOption id="logo_tiling" label="LOGO TILING" icon={<Grid size={15} />} />
             </div>
           </div>
@@ -137,7 +138,7 @@ const BrandingForm = ({
                     <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 tracking-widest uppercase">Grain & Spacing</label>
                     <span className="text-[11px] font-black text-[#8C4A28] dark:text-orange-400">{wmSpacing}px</span>
                   </div>
-                  <input type="range" min="10" max="800" value={wmSpacing} onChange={(e) => setWmSpacing(e.target.value)} className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#8C4A28] dark:accent-orange-500" />
+                  <input type="range" min="5" max="600" value={wmSpacing} onChange={(e) => setWmSpacing(Number(e.target.value))} className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#8C4A28] dark:accent-orange-500" />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-3">

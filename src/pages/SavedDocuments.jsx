@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,16 +8,11 @@ const SavedDocuments = () => {
   const [documents, setDocuments] = useState([]);
   const navigate = useNavigate();
 
-
-
   useEffect(() => {
     const fetchDocuments = async () => {
       try {
-        const response = await axios.get('https://docu-craft-server.vercel.app/api/documents/my-documents', {
-          withCredentials: true
-        });
+        const response = await api.get('/documents/my-documents');
         setDocuments(response.data);
-
       } catch (error) {
         toast.error("Failed to load documents");
       }
@@ -35,9 +30,7 @@ const SavedDocuments = () => {
     const loadingToast = toast.loading("Deleting document...");
 
     try {
-      await axios.delete(`https://docu-craft-server.vercel.app/api/documents/delete/${id}`, {
-        withCredentials: true
-      });
+      await api.delete(`/documents/delete/${id}`);
 
       // স্টেট থেকে ডকুমেন্টটি রিমুভ করা
       setDocuments(prevDocs => prevDocs.filter(doc => doc._id !== id));
